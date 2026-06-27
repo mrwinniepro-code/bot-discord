@@ -1,0 +1,26 @@
+# Secrets
+.env
+
+# Base de donnees locale
+data/config.db
+data/config.db-journal
+data/config.db-wal
+data/config.db-shm
+
+# Fonds personnalises uploades
+data/assets/backgrounds/*
+!data/assets/backgrounds/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Editeurs / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
