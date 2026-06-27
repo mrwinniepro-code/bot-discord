@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -30,3 +31,16 @@ DEV_GUILD_ID = os.getenv("DEV_GUILD_ID", "").strip() or None
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or (
     "sqlite:///" + (DATA_DIR / "config.db").as_posix()
 )
+
+# --- Dashboard web (Phase 2) ---
+# Identifiants OAuth2 de l'application Discord (memes que le bot).
+DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "").strip()
+DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET", "").strip()
+
+# URL publique du dashboard (sans / final). En local : http://localhost:5000
+DASHBOARD_BASE_URL = os.getenv("DASHBOARD_BASE_URL", "http://localhost:5000").strip().rstrip("/")
+DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "5000"))
+
+# Cle secrete pour signer les sessions Flask. Si absente, on en genere une
+# (les sessions seront alors invalidees a chaque redemarrage).
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "").strip() or secrets.token_hex(32)

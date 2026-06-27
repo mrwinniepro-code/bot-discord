@@ -1,0 +1,27 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title"><i class="bi bi-stars text-primary"></i> Bienvenue sur le dashboard</h5>
+    <p class="text-secondary">Choisis un module dans le menu de gauche pour le configurer.</p>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <a href="{{ url_for('welcome', guild_id=guild.id) }}" class="text-decoration-none">
+          <div class="card module-card h-100"><div class="card-body">
+            <h6><i class="bi bi-door-open text-primary"></i> Arrivées / Départs</h6>
+            <small class="text-secondary">Messages + carte d'accueil personnalisée.</small>
+          </div></div>
+        </a>
+      </div>
+      <div class="col-md-6">
+        <a href="{{ url_for('autoroles', guild_id=guild.id) }}" class="text-decoration-none">
+          <div class="card module-card h-100"><div class="card-body">
+            <h6><i class="bi bi-person-badge text-primary"></i> Auto-rôles</h6>
+            <small class="text-secondary">Rôles donnés automatiquement à l'arrivée.</small>
+          </div></div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

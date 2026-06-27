@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-4 fw-bold"><i class="bi bi-robot text-primary"></i> {{ bot_name }}</h1>
+  <p class="lead text-secondary mb-4">
+    Configure ton serveur Discord depuis le navigateur : messages de bienvenue,
+    carte d'accueil personnalisée, rôles automatiques, et bien plus.
+  </p>
+
+  {% if not configured %}
+    <div class="alert alert-warning d-inline-block text-start">
+      <i class="bi bi-exclamation-triangle"></i>
+      Le dashboard n'est pas encore configuré (identifiants OAuth manquants dans le fichier <code>.env</code>).
+    </div>
+  {% elif current_user %}
+    <a href="{{ url_for('servers') }}" class="btn btn-lg btn-primary">
+      <i class="bi bi-grid"></i> Choisir un serveur
+    </a>
+  {% else %}
+    <a href="{{ url_for('auth.login') }}" class="btn btn-lg btn-primary">
+      <i class="bi bi-discord"></i> Se connecter avec Discord
+    </a>
+  {% endif %}
+
+  <div class="row g-4 mt-5 text-start">
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h5><i class="bi bi-door-open text-primary"></i> Arrivées / Départs</h5>
+        <p class="text-secondary mb-0">Messages personnalisés et carte d'accueil en image.</p>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h5><i class="bi bi-person-badge text-primary"></i> Rôles automatiques</h5>
+        <p class="text-secondary mb-0">Attribue des rôles dès l'arrivée d'un membre.</p>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h5><i class="bi bi-shield-check text-primary"></i> Et plus à venir</h5>
+        <p class="text-secondary mb-0">Modération, logs, tickets, niveaux, économie…</p>
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

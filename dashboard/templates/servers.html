@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Mes serveurs — {{ bot_name }}{% endblock %}
+{% block content %}
+<h3 class="mb-4"><i class="bi bi-grid"></i> Mes serveurs</h3>
+<p class="text-secondary">Serveurs où tu as la permission <strong>Gérer le serveur</strong>.</p>
+
+<div class="row g-3">
+  {% for g in guilds %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        {% if g.icon %}
+          <img src="https://cdn.discordapp.com/icons/{{ g.id }}/{{ g.icon }}.png" class="rounded-circle" width="52" height="52" alt="">
+        {% else %}
+          <div class="server-icon-placeholder">{{ g.name[0]|upper }}</div>
+        {% endif %}
+        <div class="flex-grow-1 overflow-hidden">
+          <div class="fw-semibold text-truncate">{{ g.name }}</div>
+          {% if g.bot_in %}
+            <a href="{{ url_for('guild_home', guild_id=g.id) }}" class="btn btn-sm btn-primary mt-1">
+              <i class="bi bi-gear"></i> Configurer
+            </a>
+          {% else %}
+            <a href="{{ g.invite }}" class="btn btn-sm btn-outline-light mt-1">
+              <i class="bi bi-plus-circle"></i> Ajouter le bot
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-secondary">Aucun serveur trouvé où tu es administrateur.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ bot_name }} — Dashboard{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle px-3">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+      <i class="bi bi-robot text-primary"></i> {{ bot_name }}
+    </a>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      {% if current_user %}
+        <a href="{{ url_for('servers') }}" class="btn btn-sm btn-outline-light">
+          <i class="bi bi-grid"></i> Mes serveurs
+        </a>
+        <span class="navbar-text small">
+          <i class="bi bi-person-circle"></i> {{ current_user.username }}
+        </span>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger">Déconnexion</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-discord"></i> Se connecter
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

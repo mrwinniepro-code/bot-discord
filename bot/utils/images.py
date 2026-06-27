@@ -88,25 +88,37 @@ def _truncate(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont
     return text + ell
 
 
+def _open_background(background) -> Image.Image | None:
+    """Ouvre un fond depuis des octets (URL telechargee) ou un chemin local."""
+    try:
+        if isinstance(background, (bytes, bytearray)):
+            return Image.open(io.BytesIO(background)).convert("RGB")
+        if isinstance(background, str) and background and Path(background).exists():
+            return Image.open(background).convert("RGB")
+    except Exception:
+        return None
+    return None
+
+
 def _render_card(
     avatar_bytes: bytes,
     title: str,
     username: str,
     subtitle: str,
-    background_path: str | None,
+    background=None,
 ) -> io.BytesIO:
-    """Dessine la carte (operation CPU, executee dans un thread)."""
+    """Dessine la carte (operation CPU, executee dans un thread).
+
+    background : octets d'image, chemin local, ou None (=> degrade par defaut).
+    """
     title = _normalize_text(title)
     username = _normalize_text(username)
     subtitle = _normalize_text(subtitle)
 
     # Fond : image perso si dispo, sinon degrade "blurple" facon Discord
-    if background_path and Path(background_path).exists():
-        try:
-            bg = Image.open(background_path).convert("RGB")
-            bg = ImageOps.fit(bg, (CARD_W, CARD_H), Image.LANCZOS)
-        except Exception:
-            bg = _vertical_gradient(CARD_W, CARD_H, (35, 39, 84), (88, 101, 242))
+    bg = _open_background(background)
+    if bg is not None:
+        bg = ImageOps.fit(bg, (CARD_W, CARD_H), Image.LANCZOS)
     else:
         bg = _vertical_gradient(CARD_W, CARD_H, (35, 39, 84), (88, 101, 242))
 
@@ -148,6 +160,25 @@ def _render_card(
     return buffer
 
 
+async def _resolve_background(background_path: str | None):
+    """Transforme la valeur stockee (URL ou chemin) en source utilisable par Pillow."""
+    if not background_path:
+        return None
+    if background_path.startswith(("http://", "https://")):
+        try:
+            import aiohttp
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as http:
+                async with http.get(background_path) as resp:
+                    if resp.status == 200:
+                        return await resp.read()
+        except Exception:
+            return None
+        return None
+    return background_path  # chemin local
+
+
 async def generate_welcome_card(
     member: discord.Member,
     title: str = "Bienvenue",
@@ -156,6 +187,7 @@ async def generate_welcome_card(
 ) -> io.BytesIO:
     """Genere la carte de bienvenue d'un membre et renvoie un buffer PNG."""
     avatar_bytes = await member.display_avatar.replace(size=256, format="png").read()
+    background = await _resolve_background(background_path)
     if subtitle is None:
         count = member.guild.member_count or 0
         subtitle = f"Membre n°{count}" if count else member.guild.name
@@ -163,5 +195,16 @@ async def generate_welcome_card(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, _render_card, avatar_bytes, title, username, subtitle, background_path
+        None, _render_card, avatar_bytes, title, username, subtitle, background
     )
+
+
+def placeholder_avatar_bytes() -> bytes:
+    """Avatar neutre (silhouette) pour l'apercu du dashboard."""
+    img = Image.new("RGB", (256, 256), (88, 101, 242))
+    d = ImageDraw.Draw(img)
+    d.ellipse((90, 52, 166, 128), fill=(255, 255, 255))      # tete
+    d.ellipse((54, 140, 202, 300), fill=(255, 255, 255))     # epaules
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center py-5">
+  <h3>{{ guild.name }}</h3>
+  <p class="text-secondary">Le bot n'est pas encore sur ce serveur.</p>
+  <a href="{{ invite }}" class="btn btn-lg btn-primary">
+    <i class="bi bi-plus-circle"></i> Ajouter {{ bot_name }} à ce serveur
+  </a>
+  <div class="mt-3">
+    <a href="{{ url_for('servers') }}" class="btn btn-sm btn-outline-light">Retour</a>
+  </div>
+</div>
+{% endblock %}

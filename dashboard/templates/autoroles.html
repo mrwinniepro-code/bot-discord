@@ -1,0 +1,29 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="card mb-4">
+    <div class="card-header"><i class="bi bi-person-badge text-primary"></i> Rôles automatiques</div>
+    <div class="card-body">
+      <p class="text-secondary">Coche les rôles à donner automatiquement à chaque nouveau membre.</p>
+      {% if roles %}
+        <div class="row g-2">
+          {% for r in roles %}
+          <div class="col-md-6">
+            <label class="role-pill d-flex align-items-center gap-2">
+              <input class="form-check-input mt-0" type="checkbox" name="roles" value="{{ r.id }}"
+                     {{ 'checked' if r.id|int in current }}>
+              <span class="role-dot" style="background: #{{ '%06x' % r.color if r.color else '99aab5' }}"></span>
+              <span class="text-truncate">{{ r.name }}</span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-warning">Impossible de lister les rôles (le bot a-t-il bien accès au serveur ?).</p>
+      {% endif %}
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-lg"></i> Enregistrer</button>
+</form>
+{% endblock %}

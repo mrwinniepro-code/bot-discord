@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ guild.name }} — {{ bot_name }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+  {% if guild.icon %}
+    <img src="https://cdn.discordapp.com/icons/{{ guild.id }}/{{ guild.icon }}.png" class="rounded-circle" width="56" height="56" alt="">
+  {% else %}
+    <div class="server-icon-placeholder lg">{{ guild.name[0]|upper }}</div>
+  {% endif %}
+  <div>
+    <h4 class="mb-0">{{ guild.name }}</h4>
+    <small class="text-secondary">Configuration du serveur</small>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-3">
+    <div class="list-group sticky-top" style="top:1rem">
+      <a href="{{ url_for('guild_home', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='home' }}">
+        <i class="bi bi-house-door"></i> Accueil
+      </a>
+      <a href="{{ url_for('welcome', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='welcome' }}">
+        <i class="bi bi-door-open"></i> Arrivées / Départs
+      </a>
+      <a href="{{ url_for('autoroles', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='autoroles' }}">
+        <i class="bi bi-person-badge"></i> Auto-rôles
+      </a>
+      <span class="list-group-item disabled d-flex justify-content-between">
+        <span><i class="bi bi-shield"></i> Modération</span><span class="badge bg-secondary">bientôt</span>
+      </span>
+      <span class="list-group-item disabled d-flex justify-content-between">
+        <span><i class="bi bi-card-list"></i> Logs</span><span class="badge bg-secondary">bientôt</span>
+      </span>
+      <span class="list-group-item disabled d-flex justify-content-between">
+        <span><i class="bi bi-trophy"></i> Niveaux</span><span class="badge bg-secondary">bientôt</span>
+      </span>
+    </div>
+  </div>
+  <div class="col-lg-9">
+    {% block guild_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

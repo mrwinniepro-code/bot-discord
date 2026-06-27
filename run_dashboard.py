@@ -1,12 +1,8 @@
-"""Lance le dashboard web.  (Arrive a la Phase 2.)
-
-Pour l'instant ce fichier est un espace reserve : le dashboard sera construit
-une fois les modules du bot en place.  Utilisation future :  python run_dashboard.py
-"""
+"""Lance le dashboard web.  Utilisation :  python run_dashboard.py"""
+from bot.config import DASHBOARD_PORT
+from dashboard.app import create_app
 
 if __name__ == "__main__":
-    print(
-        "Le dashboard web sera ajoute a la Phase 2.\n"
-        "Pour l'instant, configure le bot avec les commandes slash dans Discord "
-        "(/bienvenue, /autorole, /panneaurole...)."
-    )
+    app = create_app()
+    print(f"Dashboard demarre sur http://localhost:{DASHBOARD_PORT}")
+    app.run(host="0.0.0.0", port=DASHBOARD_PORT, debug=False)
