@@ -39,10 +39,13 @@
       </div>
     </div>
     <div class="card-body">
-      <label class="form-label">Domaines autorisés (séparés par des virgules)</label>
+      <label class="form-label">Domaines autorisés en plus (séparés par des virgules)</label>
       <input type="text" name="whitelist" class="form-control"
-             placeholder="youtube.com, twitch.tv, tenor.com" value="{{ cfg.whitelist }}">
-      <div class="form-text">Les liens contenant un de ces domaines ne sont pas supprimés.</div>
+             placeholder="youtube.com, twitch.tv" value="{{ cfg.whitelist }}">
+      <div class="form-text">
+        Les liens contenant un de ces domaines ne sont pas supprimés.
+        <strong>Les GIF de Discord (Tenor, Giphy) et les médias Discord sont déjà autorisés automatiquement.</strong>
+      </div>
     </div>
   </div>
 

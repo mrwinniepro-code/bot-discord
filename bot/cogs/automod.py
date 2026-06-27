@@ -20,6 +20,19 @@ LINK_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Domaines toujours autorises (GIF du selecteur Discord, medias Discord).
+# Evite de supprimer les GIF Tenor/Giphy inseres par le bouton GIF de Discord.
+DEFAULT_LINK_WHITELIST = {
+    "tenor.com",
+    "giphy.com",
+    "media.discordapp.net",
+    "cdn.discordapp.com",
+    "images-ext-1.discordapp.net",
+    "images-ext-2.discordapp.net",
+    "discordapp.com",
+    "discord.com",
+}
+
 CACHE_TTL = 15  # secondes
 
 
@@ -58,12 +71,14 @@ class AutoMod(commands.Cog):
     def _has_forbidden_link(content: str, whitelist: str) -> bool:
         if not LINK_RE.search(content):
             return False
-        allowed = [w.strip().lower() for w in whitelist.split(",") if w.strip()]
-        low = content.lower()
-        for w in allowed:
-            if w in low:
-                return False
-        return True
+        allowed = set(DEFAULT_LINK_WHITELIST)
+        allowed.update(w.strip().lower() for w in whitelist.split(",") if w.strip())
+        # Chaque lien detecte doit etre autorise ; sinon le message est bloque.
+        for match in LINK_RE.finditer(content):
+            link = match.group(0).lower()
+            if not any(domain in link for domain in allowed):
+                return True
+        return False
 
     @staticmethod
     def _find_badword(content: str, words: str) -> str | None:
