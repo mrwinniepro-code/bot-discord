@@ -1,0 +1,32 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-lightbulb text-primary"></i> Suggestions</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="suggestions_enabled" id="suggestions_enabled"
+               {{ 'checked' if cfg.suggestions_enabled }}>
+        <label class="form-check-label" for="suggestions_enabled">Activé</label>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Salon des suggestions</label>
+        <select name="suggestions_channel_id" class="form-select">
+          <option value="">— Choisir un salon —</option>
+          {% for c in channels %}
+            <option value="{{ c.id }}" {{ 'selected' if cfg.suggestions_channel_id == c.id|int }}># {{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="alert alert-secondary mb-0">
+        <i class="bi bi-info-circle"></i> Les membres proposent avec <code>/suggestion</code>.
+        Chaque suggestion reçoit automatiquement les réactions 👍 / 👎.
+      </div>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-lg"></i> Enregistrer</button>
+</form>
+{% endblock %}

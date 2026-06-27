@@ -1,0 +1,38 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<div class="card">
+  <div class="card-header"><i class="bi bi-gift text-primary"></i> Giveaways</div>
+  <div class="card-body">
+    <p class="text-secondary">
+      Les giveaways se lancent dans Discord avec <code>/giveaway start</code>.
+      Cette page affiche l'historique.
+    </p>
+    {% if giveaways %}
+    <div class="table-responsive">
+      <table class="table table-dark table-hover align-middle">
+        <thead>
+          <tr><th>#</th><th>Lot</th><th>Gagnants</th><th>Participants</th><th>Fin</th><th>État</th></tr>
+        </thead>
+        <tbody>
+          {% for g in giveaways %}
+          <tr>
+            <td>{{ g.id }}</td>
+            <td>{{ g.prize }}</td>
+            <td>{{ g.winners }}</td>
+            <td>{{ g.entries }}</td>
+            <td class="text-nowrap small text-secondary">{{ g.end_time.strftime('%d/%m/%Y %H:%M') if g.end_time else '' }}</td>
+            <td>
+              {% if g.ended %}<span class="badge bg-secondary">Terminé</span>
+              {% else %}<span class="badge bg-success">En cours</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0">Aucun giveaway pour l'instant.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

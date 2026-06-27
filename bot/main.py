@@ -24,6 +24,9 @@ INITIAL_COGS = [
     "bot.cogs.moderation",
     "bot.cogs.automod",
     "bot.cogs.logs",
+    "bot.cogs.tickets",
+    "bot.cogs.giveaways",
+    "bot.cogs.polls",
 ]
 
 

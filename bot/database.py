@@ -80,6 +80,18 @@ class GuildConfig(Base):
     automod_badwords_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     automod_badwords: Mapped[str] = mapped_column(Text, default="")
 
+    # --- Tickets ---
+    tickets_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    ticket_category_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    ticket_support_role_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    ticket_open_message: Mapped[str] = mapped_column(
+        Text, default="Merci d'avoir ouvert un ticket ! Un membre du staff va te repondre. 🎫"
+    )
+
+    # --- Suggestions ---
+    suggestions_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    suggestions_channel_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
 
 class AutoRole(Base):
     """Roles attribues automatiquement a chaque arrivee."""
@@ -140,6 +152,55 @@ class ModCase(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+
+
+class Ticket(Base):
+    """Un ticket = un salon prive ouvert par un membre."""
+
+    __tablename__ = "ticket"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    channel_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    open: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class Giveaway(Base):
+    """Un giveaway (tirage au sort)."""
+
+    __tablename__ = "giveaway"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    channel_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
+    host_id: Mapped[int] = mapped_column(BigInteger)
+    prize: Mapped[str] = mapped_column(String(255))
+    winners_count: Mapped[int] = mapped_column(Integer, default=1)
+    end_time: Mapped[datetime] = mapped_column(DateTime, index=True)
+    ended: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    entries: Mapped[list["GiveawayEntry"]] = relationship(
+        back_populates="giveaway", cascade="all, delete-orphan"
+    )
+
+
+class GiveawayEntry(Base):
+    """Une participation a un giveaway."""
+
+    __tablename__ = "giveaway_entry"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    giveaway_id: Mapped[int] = mapped_column(
+        ForeignKey("giveaway.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(BigInteger)
+
+    giveaway: Mapped["Giveaway"] = relationship(back_populates="entries")
 
 
 # --- Moteur & sessions ---

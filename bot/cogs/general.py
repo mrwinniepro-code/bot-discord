@@ -48,11 +48,18 @@ class General(commands.Cog):
             inline=False,
         )
         embed.add_field(
+            name="🎫 Tickets · 🎉 Giveaways · 🗳️ Sondages",
+            value="`/ticket panneau` — support par tickets.\n"
+            "`/giveaway start` — tirages au sort.\n"
+            "`/sondage` — vote natif · `/suggestion` — boîte à idées.",
+            inline=False,
+        )
+        embed.add_field(
             name="🛠️ Divers",
             value="`/ping` — teste la reactivite du bot.",
             inline=False,
         )
-        embed.set_footer(text="D'autres modules arrivent : tickets, giveaways, niveaux, economie...")
+        embed.set_footer(text="D'autres modules arrivent : niveaux (XP), economie...")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 

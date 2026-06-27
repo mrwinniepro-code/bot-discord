@@ -23,7 +23,7 @@ from bot.config import (
     DASHBOARD_PORT,
     FLASK_SECRET_KEY,
 )
-from bot.database import AutoRole, ModCase, get_guild_config, session_scope
+from bot.database import AutoRole, Giveaway, ModCase, get_guild_config, session_scope
 from bot.utils.images import _render_card, placeholder_avatar_bytes
 from bot.utils.modlog import ACTION_LABELS
 
@@ -311,6 +311,97 @@ def create_app() -> Flask:
         return render_template(
             "moderation.html", guild=guild, active="moderation", cases=rows, labels=ACTION_LABELS
         )
+
+    # ---- module Tickets ---- #
+    @app.route("/g/<guild_id>/tickets", methods=["GET", "POST"])
+    @login_required
+    def tickets(guild_id):
+        guild = require_guild(guild_id)
+        try:
+            cats = discord_api.categories(guild_id)
+            channels = discord_api.text_channels(guild_id)
+            roles = discord_api.assignable_roles(guild_id)
+        except requests.HTTPError:
+            cats, channels, roles = [], [], []
+
+        if request.method == "POST":
+            check_csrf()
+            form = request.form
+            with session_scope() as s:
+                cfg = get_guild_config(s, int(guild_id))
+                cfg.tickets_enabled = form.get("tickets_enabled") == "on"
+                cfg.ticket_category_id = _int_or_none(form.get("ticket_category_id"))
+                cfg.ticket_support_role_id = _int_or_none(form.get("ticket_support_role_id"))
+                cfg.ticket_open_message = (
+                    form.get("ticket_open_message", "").strip() or cfg.ticket_open_message
+                )
+            flash("Réglages des tickets enregistrés.", "success")
+            return redirect(url_for("tickets", guild_id=guild_id))
+
+        with session_scope() as s:
+            cfg = get_guild_config(s, int(guild_id))
+            data = {
+                "tickets_enabled": cfg.tickets_enabled,
+                "ticket_category_id": cfg.ticket_category_id,
+                "ticket_support_role_id": cfg.ticket_support_role_id,
+                "ticket_open_message": cfg.ticket_open_message,
+            }
+        return render_template(
+            "tickets.html", guild=guild, active="tickets",
+            categories=cats, channels=channels, roles=roles, cfg=data,
+        )
+
+    # ---- module Suggestions ---- #
+    @app.route("/g/<guild_id>/suggestions", methods=["GET", "POST"])
+    @login_required
+    def suggestions(guild_id):
+        guild = require_guild(guild_id)
+        try:
+            channels = discord_api.text_channels(guild_id)
+        except requests.HTTPError:
+            channels = []
+
+        if request.method == "POST":
+            check_csrf()
+            form = request.form
+            with session_scope() as s:
+                cfg = get_guild_config(s, int(guild_id))
+                cfg.suggestions_enabled = form.get("suggestions_enabled") == "on"
+                cfg.suggestions_channel_id = _int_or_none(form.get("suggestions_channel_id"))
+            flash("Réglages des suggestions enregistrés.", "success")
+            return redirect(url_for("suggestions", guild_id=guild_id))
+
+        with session_scope() as s:
+            cfg = get_guild_config(s, int(guild_id))
+            data = {
+                "suggestions_enabled": cfg.suggestions_enabled,
+                "suggestions_channel_id": cfg.suggestions_channel_id,
+            }
+        return render_template(
+            "suggestions.html", guild=guild, active="suggestions", channels=channels, cfg=data
+        )
+
+    # ---- module Giveaways (liste) ---- #
+    @app.route("/g/<guild_id>/giveaways")
+    @login_required
+    def giveaways(guild_id):
+        guild = require_guild(guild_id)
+        with session_scope() as s:
+            rows = (
+                s.query(Giveaway)
+                .filter_by(guild_id=int(guild_id))
+                .order_by(Giveaway.ended, Giveaway.end_time.desc())
+                .limit(50)
+                .all()
+            )
+            items = [
+                {
+                    "id": g.id, "prize": g.prize, "winners": g.winners_count,
+                    "end_time": g.end_time, "ended": g.ended, "entries": len(g.entries),
+                }
+                for g in rows
+            ]
+        return render_template("giveaways.html", guild=guild, active="giveaways", giveaways=items)
 
     def _handle_background_upload(guild_id: str):
         """Sauvegarde un fond uploade. Renvoie le chemin, ou None si pas de fichier valide."""

@@ -132,6 +132,13 @@ def text_channels(guild_id: str) -> list[dict]:
     return chans
 
 
+def categories(guild_id: str) -> list[dict]:
+    """Catégories de salons, triées par position."""
+    cats = [c for c in get_guild_channels(guild_id) if c.get("type") == 4]
+    cats.sort(key=lambda c: c.get("position", 0))
+    return cats
+
+
 def assignable_roles(guild_id: str) -> list[dict]:
     """Roles attribuables (hors @everyone et roles geres), du plus haut au plus bas."""
     roles = [

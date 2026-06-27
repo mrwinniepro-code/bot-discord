@@ -40,6 +40,18 @@
          class="list-group-item list-group-item-action {{ 'active' if active=='logs' }}">
         <i class="bi bi-card-list"></i> Logs
       </a>
+      <a href="{{ url_for('tickets', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='tickets' }}">
+        <i class="bi bi-ticket-perforated"></i> Tickets
+      </a>
+      <a href="{{ url_for('giveaways', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='giveaways' }}">
+        <i class="bi bi-gift"></i> Giveaways
+      </a>
+      <a href="{{ url_for('suggestions', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='suggestions' }}">
+        <i class="bi bi-lightbulb"></i> Suggestions
+      </a>
       <span class="list-group-item disabled d-flex justify-content-between">
         <span><i class="bi bi-trophy"></i> Niveaux</span><span class="badge bg-secondary">bientôt</span>
       </span>
