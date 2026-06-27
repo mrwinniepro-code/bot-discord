@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import io
+import unicodedata
 from pathlib import Path
 
 import discord
@@ -69,6 +70,14 @@ def _circular(avatar: Image.Image, size: int) -> Image.Image:
     return big.resize((size, size), Image.LANCZOS)
 
 
+def _normalize_text(text: str) -> str:
+    """Convertit les "fausses polices" Unicode (caracteres mathematiques stylises,
+    pleine chasse, etc.) en lettres normales pour qu'elles s'affichent sur la carte."""
+    if not text:
+        return text
+    return unicodedata.normalize("NFKC", text)
+
+
 def _truncate(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_w: int) -> str:
     """Coupe le texte avec "..." s'il depasse la largeur max."""
     if draw.textlength(text, font=font) <= max_w:
@@ -87,6 +96,10 @@ def _render_card(
     background_path: str | None,
 ) -> io.BytesIO:
     """Dessine la carte (operation CPU, executee dans un thread)."""
+    title = _normalize_text(title)
+    username = _normalize_text(username)
+    subtitle = _normalize_text(subtitle)
+
     # Fond : image perso si dispo, sinon degrade "blurple" facon Discord
     if background_path and Path(background_path).exists():
         try:
