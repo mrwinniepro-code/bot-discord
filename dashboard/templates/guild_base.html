@@ -28,12 +28,18 @@
          class="list-group-item list-group-item-action {{ 'active' if active=='autoroles' }}">
         <i class="bi bi-person-badge"></i> Auto-rôles
       </a>
-      <span class="list-group-item disabled d-flex justify-content-between">
-        <span><i class="bi bi-shield"></i> Modération</span><span class="badge bg-secondary">bientôt</span>
-      </span>
-      <span class="list-group-item disabled d-flex justify-content-between">
-        <span><i class="bi bi-card-list"></i> Logs</span><span class="badge bg-secondary">bientôt</span>
-      </span>
+      <a href="{{ url_for('moderation', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='moderation' }}">
+        <i class="bi bi-shield"></i> Modération
+      </a>
+      <a href="{{ url_for('automod', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='automod' }}">
+        <i class="bi bi-robot"></i> Auto-modération
+      </a>
+      <a href="{{ url_for('logs', guild_id=guild.id) }}"
+         class="list-group-item list-group-item-action {{ 'active' if active=='logs' }}">
+        <i class="bi bi-card-list"></i> Logs
+      </a>
       <span class="list-group-item disabled d-flex justify-content-between">
         <span><i class="bi bi-trophy"></i> Niveaux</span><span class="badge bg-secondary">bientôt</span>
       </span>

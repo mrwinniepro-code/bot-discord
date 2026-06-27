@@ -1,0 +1,69 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+
+  <!-- Anti-spam -->
+  <div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-speedometer2 text-primary"></i> Anti-spam</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="antispam" id="antispam"
+               {{ 'checked' if cfg.antispam }}>
+        <label class="form-check-label" for="antispam">Activé</label>
+      </div>
+    </div>
+    <div class="card-body row g-3">
+      <div class="col-sm-6">
+        <label class="form-label">Nombre de messages</label>
+        <input type="number" name="antispam_count" class="form-control" min="2" max="30"
+               value="{{ cfg.antispam_count }}">
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label">Dans un délai de (secondes)</label>
+        <input type="number" name="antispam_seconds" class="form-control" min="1" max="60"
+               value="{{ cfg.antispam_seconds }}">
+      </div>
+      <div class="form-text">Au-delà, le message est supprimé et l'auteur est muet 5 min.</div>
+    </div>
+  </div>
+
+  <!-- Anti-lien -->
+  <div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-link-45deg text-primary"></i> Anti-lien</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="antilink" id="antilink"
+               {{ 'checked' if cfg.antilink }}>
+        <label class="form-check-label" for="antilink">Activé</label>
+      </div>
+    </div>
+    <div class="card-body">
+      <label class="form-label">Domaines autorisés (séparés par des virgules)</label>
+      <input type="text" name="whitelist" class="form-control"
+             placeholder="youtube.com, twitch.tv, tenor.com" value="{{ cfg.whitelist }}">
+      <div class="form-text">Les liens contenant un de ces domaines ne sont pas supprimés.</div>
+    </div>
+  </div>
+
+  <!-- Filtre de mots -->
+  <div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-chat-square-text text-primary"></i> Filtre de mots</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="badwords_on" id="badwords_on"
+               {{ 'checked' if cfg.badwords_on }}>
+        <label class="form-check-label" for="badwords_on">Activé</label>
+      </div>
+    </div>
+    <div class="card-body">
+      <label class="form-label">Mots interdits (séparés par des virgules)</label>
+      <textarea name="badwords" class="form-control" rows="3"
+                placeholder="mot1, mot2, insulte">{{ cfg.badwords }}</textarea>
+      <div class="form-text">Les modérateurs (Gérer les messages) ne sont jamais affectés.</div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-lg"></i> Enregistrer</button>
+</form>
+{% endblock %}

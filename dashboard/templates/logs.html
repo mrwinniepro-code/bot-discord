@@ -1,0 +1,41 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-card-list text-primary"></i> Journal des évènements</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="logs_enabled" id="logs_enabled"
+               {{ 'checked' if cfg.logs_enabled }}>
+        <label class="form-check-label" for="logs_enabled">Activé</label>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Salon des logs</label>
+        <select name="logs_channel_id" class="form-select">
+          <option value="">— Choisir un salon —</option>
+          {% for c in channels %}
+            <option value="{{ c.id }}" {{ 'selected' if cfg.logs_channel_id == c.id|int }}># {{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <label class="form-label">Évènements à journaliser</label>
+      {% for key, label in [
+        ('log_joins','Arrivées de membres'),
+        ('log_leaves','Départs de membres'),
+        ('log_message_delete','Messages supprimés'),
+        ('log_message_edit','Messages modifiés'),
+        ('log_moderation','Sanctions & auto-modération')] %}
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" name="{{ key }}" id="{{ key }}"
+               {{ 'checked' if cfg[key] }}>
+        <label class="form-check-label" for="{{ key }}">{{ label }}</label>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-lg"></i> Enregistrer</button>
+</form>
+{% endblock %}

@@ -37,3 +37,23 @@ def role_problem_message(guild: discord.Guild, role: discord.Role) -> str | None
             "Monte mon role au-dessus de lui dans Parametres du serveur > Roles."
         )
     return None
+
+
+def moderation_problem(
+    actor: discord.Member, target: discord.Member, me: discord.Member
+) -> str | None:
+    """Verifie qu'une action de moderation est legitime. Retourne une erreur ou None."""
+    guild = target.guild
+    if target.id == actor.id:
+        return "Tu ne peux pas te cibler toi-meme."
+    if target.id == me.id:
+        return "Je ne peux pas me sanctionner moi-meme. 🙂"
+    if target.id == guild.owner_id:
+        return "Impossible de sanctionner le proprietaire du serveur."
+    # L'auteur doit etre au-dessus de la cible (sauf s'il est proprietaire)
+    if actor.id != guild.owner_id and target.top_role >= actor.top_role:
+        return "Cette personne a un role superieur ou egal au tien."
+    # Le bot doit etre au-dessus de la cible
+    if target.top_role >= me.top_role:
+        return "Je ne peux pas agir : son role est au-dessus (ou egal a) du mien."
+    return None

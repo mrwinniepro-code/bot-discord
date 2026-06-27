@@ -6,6 +6,7 @@ data/config.db
 data/config.db-journal
 data/config.db-wal
 data/config.db-shm
+data/*.bak
 
 # Fonds personnalises uploades
 data/assets/backgrounds/*

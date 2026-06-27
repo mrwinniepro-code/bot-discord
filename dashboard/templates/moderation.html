@@ -1,0 +1,43 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+<div class="card">
+  <div class="card-header"><i class="bi bi-shield text-primary"></i> Casier — historique des sanctions</div>
+  <div class="card-body">
+    <p class="text-secondary">
+      Les sanctions se donnent dans Discord avec les commandes
+      <code>/ban</code> <code>/kick</code> <code>/mute</code> <code>/warn</code>.
+      Cette page liste l'historique ; tu peux y supprimer un dossier.
+    </p>
+    {% if cases %}
+    <div class="table-responsive">
+      <table class="table table-dark table-hover align-middle">
+        <thead>
+          <tr><th>#</th><th>Action</th><th>Membre</th><th>Modérateur</th><th>Raison</th><th>Date</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for c in cases %}
+          <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ labels.get(c.action, c.action) }}</td>
+            <td><code>{{ c.user_id }}</code></td>
+            <td><code>{{ c.moderator_id }}</code></td>
+            <td class="text-truncate" style="max-width:260px">{{ c.reason or '—' }}</td>
+            <td class="text-nowrap small text-secondary">{{ c.created.strftime('%d/%m/%Y %H:%M') if c.created else '' }}</td>
+            <td>
+              <form method="post" onsubmit="return confirm('Supprimer le dossier #{{ c.id }} ?')">
+                <input type="hidden" name="csrf" value="{{ csrf_token }}">
+                <input type="hidden" name="delete_case" value="{{ c.id }}">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0">Aucun dossier pour l'instant. 🎉</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

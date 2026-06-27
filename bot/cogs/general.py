@@ -37,11 +37,22 @@ class General(commands.Cog):
             inline=False,
         )
         embed.add_field(
+            name="🛡️ Modération",
+            value="`/ban` `/kick` `/mute` `/unmute` `/warn` `/warnings` `/clear` — sanctions + casier.",
+            inline=False,
+        )
+        embed.add_field(
+            name="🤖 Auto-modération & Logs",
+            value="Anti-spam, anti-lien, filtre de mots + journal des évènements "
+            "(configurable dans le dashboard).",
+            inline=False,
+        )
+        embed.add_field(
             name="🛠️ Divers",
             value="`/ping` — teste la reactivite du bot.",
             inline=False,
         )
-        embed.set_footer(text="D'autres modules arrivent : moderation, logs, tickets, niveaux...")
+        embed.set_footer(text="D'autres modules arrivent : tickets, giveaways, niveaux, economie...")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 

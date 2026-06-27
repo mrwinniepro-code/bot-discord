@@ -6,17 +6,21 @@ on pourra basculer sur PostgreSQL plus tard en changeant juste DATABASE_URL.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Iterator
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    DateTime,
     ForeignKey,
     Integer,
     String,
     Text,
     create_engine,
     event,
+    inspect,
+    text,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -57,6 +61,24 @@ class GuildConfig(Base):
     leave_message: Mapped[str] = mapped_column(
         Text, default="**{user_name}** a quitte le serveur. 👋"
     )
+
+    # --- Logs ---
+    logs_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    logs_channel_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    log_joins: Mapped[bool] = mapped_column(Boolean, default=True)
+    log_leaves: Mapped[bool] = mapped_column(Boolean, default=True)
+    log_message_delete: Mapped[bool] = mapped_column(Boolean, default=True)
+    log_message_edit: Mapped[bool] = mapped_column(Boolean, default=True)
+    log_moderation: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # --- Auto-moderation ---
+    automod_antispam_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    automod_antispam_count: Mapped[int] = mapped_column(Integer, default=5)
+    automod_antispam_seconds: Mapped[int] = mapped_column(Integer, default=5)
+    automod_antilink_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    automod_antilink_whitelist: Mapped[str] = mapped_column(Text, default="")
+    automod_badwords_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    automod_badwords: Mapped[str] = mapped_column(Text, default="")
 
 
 class AutoRole(Base):
@@ -104,6 +126,22 @@ class ReactionRoleEntry(Base):
     panel: Mapped["ReactionRolePanel"] = relationship(back_populates="entries")
 
 
+class ModCase(Base):
+    """Une entree du casier : sanction ou avertissement."""
+
+    __tablename__ = "mod_case"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    moderator_id: Mapped[int] = mapped_column(BigInteger)
+    action: Mapped[str] = mapped_column(String(20))  # warn / mute / kick / ban / unmute / unban
+    reason: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+
 # --- Moteur & sessions ---
 # check_same_thread=False : utile car le bot (asyncio) et le dashboard (Flask)
 # peuvent toucher la base depuis des threads differents.
@@ -123,9 +161,37 @@ if DATABASE_URL.startswith("sqlite"):
         cur.close()
 
 
+def _auto_migrate() -> None:
+    """Ajoute les colonnes manquantes aux tables existantes (migration legere SQLite).
+
+    create_all() cree les tables absentes mais PAS les colonnes ajoutees apres coup.
+    On compare donc le modele a la table reelle et on ALTER TABLE au besoin.
+    """
+    insp = inspect(engine)
+    for table in Base.metadata.sorted_tables:
+        if not insp.has_table(table.name):
+            continue
+        existing = {c["name"] for c in insp.get_columns(table.name)}
+        for col in table.columns:
+            if col.name in existing:
+                continue
+            coltype = col.type.compile(engine.dialect)
+            ddl = f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {coltype}'
+            default = getattr(col.default, "arg", None)
+            if default is not None and not callable(default):
+                if isinstance(default, bool):
+                    default = 1 if default else 0
+                if isinstance(default, str):
+                    default = "'" + default.replace("'", "''") + "'"
+                ddl += f" DEFAULT {default}"
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
+
+
 def init_db() -> None:
-    """Cree les tables si elles n'existent pas encore."""
+    """Cree les tables manquantes puis ajoute les colonnes manquantes."""
     Base.metadata.create_all(engine)
+    _auto_migrate()
 
 
 @contextmanager

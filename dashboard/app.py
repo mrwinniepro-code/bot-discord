@@ -23,8 +23,9 @@ from bot.config import (
     DASHBOARD_PORT,
     FLASK_SECRET_KEY,
 )
-from bot.database import AutoRole, get_guild_config, session_scope
+from bot.database import AutoRole, ModCase, get_guild_config, session_scope
 from bot.utils.images import _render_card, placeholder_avatar_bytes
+from bot.utils.modlog import ACTION_LABELS
 
 from . import discord_api
 from .auth import auth_bp, get_manageable_guild, login_required
@@ -207,6 +208,110 @@ def create_app() -> Flask:
             "autoroles.html", guild=guild, active="autoroles", roles=roles, current=current
         )
 
+    # ---- module Logs ---- #
+    @app.route("/g/<guild_id>/logs", methods=["GET", "POST"])
+    @login_required
+    def logs(guild_id):
+        guild = require_guild(guild_id)
+        try:
+            channels = discord_api.text_channels(guild_id)
+        except requests.HTTPError:
+            channels = []
+
+        if request.method == "POST":
+            check_csrf()
+            form = request.form
+            with session_scope() as s:
+                cfg = get_guild_config(s, int(guild_id))
+                cfg.logs_enabled = form.get("logs_enabled") == "on"
+                cfg.logs_channel_id = _int_or_none(form.get("logs_channel_id"))
+                cfg.log_joins = form.get("log_joins") == "on"
+                cfg.log_leaves = form.get("log_leaves") == "on"
+                cfg.log_message_delete = form.get("log_message_delete") == "on"
+                cfg.log_message_edit = form.get("log_message_edit") == "on"
+                cfg.log_moderation = form.get("log_moderation") == "on"
+            flash("Réglages des logs enregistrés.", "success")
+            return redirect(url_for("logs", guild_id=guild_id))
+
+        with session_scope() as s:
+            cfg = get_guild_config(s, int(guild_id))
+            data = {
+                k: getattr(cfg, k)
+                for k in (
+                    "logs_enabled", "logs_channel_id", "log_joins", "log_leaves",
+                    "log_message_delete", "log_message_edit", "log_moderation",
+                )
+            }
+        return render_template("logs.html", guild=guild, active="logs", channels=channels, cfg=data)
+
+    # ---- module Auto-modération ---- #
+    @app.route("/g/<guild_id>/automod", methods=["GET", "POST"])
+    @login_required
+    def automod(guild_id):
+        guild = require_guild(guild_id)
+        if request.method == "POST":
+            check_csrf()
+            form = request.form
+            with session_scope() as s:
+                cfg = get_guild_config(s, int(guild_id))
+                cfg.automod_antispam_enabled = form.get("antispam") == "on"
+                cfg.automod_antispam_count = _int_or(form.get("antispam_count"), 5, 2, 30)
+                cfg.automod_antispam_seconds = _int_or(form.get("antispam_seconds"), 5, 1, 60)
+                cfg.automod_antilink_enabled = form.get("antilink") == "on"
+                cfg.automod_antilink_whitelist = form.get("whitelist", "").strip()
+                cfg.automod_badwords_enabled = form.get("badwords_on") == "on"
+                cfg.automod_badwords = form.get("badwords", "").strip()
+            flash("Réglages d'auto-modération enregistrés.", "success")
+            return redirect(url_for("automod", guild_id=guild_id))
+
+        with session_scope() as s:
+            cfg = get_guild_config(s, int(guild_id))
+            data = {
+                "antispam": cfg.automod_antispam_enabled,
+                "antispam_count": cfg.automod_antispam_count,
+                "antispam_seconds": cfg.automod_antispam_seconds,
+                "antilink": cfg.automod_antilink_enabled,
+                "whitelist": cfg.automod_antilink_whitelist,
+                "badwords_on": cfg.automod_badwords_enabled,
+                "badwords": cfg.automod_badwords,
+            }
+        return render_template("automod.html", guild=guild, active="automod", cfg=data)
+
+    # ---- module Modération (casier) ---- #
+    @app.route("/g/<guild_id>/moderation", methods=["GET", "POST"])
+    @login_required
+    def moderation(guild_id):
+        guild = require_guild(guild_id)
+        if request.method == "POST":
+            check_csrf()
+            case_id = _int_or_none(request.form.get("delete_case"))
+            if case_id:
+                with session_scope() as s:
+                    c = s.get(ModCase, case_id)
+                    if c and c.guild_id == int(guild_id):
+                        s.delete(c)
+                flash("Dossier supprimé.", "success")
+            return redirect(url_for("moderation", guild_id=guild_id))
+
+        with session_scope() as s:
+            cases = (
+                s.query(ModCase)
+                .filter_by(guild_id=int(guild_id))
+                .order_by(ModCase.created_at.desc())
+                .limit(100)
+                .all()
+            )
+            rows = [
+                {
+                    "id": c.id, "user_id": c.user_id, "moderator_id": c.moderator_id,
+                    "action": c.action, "reason": c.reason, "created": c.created_at,
+                }
+                for c in cases
+            ]
+        return render_template(
+            "moderation.html", guild=guild, active="moderation", cases=rows, labels=ACTION_LABELS
+        )
+
     def _handle_background_upload(guild_id: str):
         """Sauvegarde un fond uploade. Renvoie le chemin, ou None si pas de fichier valide."""
         file = request.files.get("background_file")
@@ -240,6 +345,13 @@ def _int_or_none(value):
         return int(value) if value else None
     except (TypeError, ValueError):
         return None
+
+
+def _int_or(value, default: int, lo: int, hi: int) -> int:
+    try:
+        return max(lo, min(hi, int(value)))
+    except (TypeError, ValueError):
+        return default
 
 
 if __name__ == "__main__":

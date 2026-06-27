@@ -21,6 +21,9 @@ INITIAL_COGS = [
     "bot.cogs.general",
     "bot.cogs.welcome",
     "bot.cogs.autoroles",
+    "bot.cogs.moderation",
+    "bot.cogs.automod",
+    "bot.cogs.logs",
 ]
 
 
