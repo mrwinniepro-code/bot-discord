@@ -1,0 +1,3 @@
+# Les scripts shell doivent garder des fins de ligne Unix (LF) meme depuis Windows,
+# sinon ils ne s'executent pas sur le serveur Linux.
+*.sh text eol=lf

@@ -10,9 +10,15 @@ Construit en **Python** (`discord.py` + `Pillow`).
 - **Panneaux de rôles à boutons** : les membres cliquent pour prendre/retirer un rôle.
 - `/ping`, `/aide`.
 
-## 🛣️ À venir
+## ✅ Modules complets
 
-Modération + logs · tickets · giveaways · sondages · niveaux (XP) · économie · **dashboard web** · hébergement 24h/24.
+Arrivées/départs · auto-rôles · panneaux de rôles · **modération** (ban/kick/mute/warn + casier) ·
+**auto-modération** (anti-spam/lien/mots) · **logs** · **tickets** · **giveaways** · **sondages/suggestions** ·
+**niveaux (XP)** · **économie** · **dashboard web** complet.
+
+## 🚀 Mise en ligne 24h/24
+
+Voir le guide pas à pas : [deploy/DEPLOY.md](deploy/DEPLOY.md) (hébergement gratuit Oracle Cloud).
 
 ---
 
