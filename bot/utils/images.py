@@ -199,6 +199,75 @@ async def generate_welcome_card(
     )
 
 
+def _render_rank_card(
+    avatar_bytes: bytes,
+    username: str,
+    level: int,
+    rank: int,
+    xp_into: int,
+    xp_needed: int,
+) -> io.BytesIO:
+    """Carte de niveau : avatar, pseudo, niveau, rang, barre de progression."""
+    username = _normalize_text(username)
+    W, H = 900, 250
+    card = _vertical_gradient(W, H, (30, 32, 54), (45, 48, 80)).convert("RGBA")
+    card = Image.alpha_composite(card, Image.new("RGBA", (W, H), (0, 0, 0, 60)))
+    draw = ImageDraw.Draw(card)
+
+    # Avatar
+    av_size = 160
+    avatar = _circular(Image.open(io.BytesIO(avatar_bytes)), av_size)
+    ax, ay = 45, (H - av_size) // 2
+    ring = Image.new("RGBA", (av_size + 12, av_size + 12), (0, 0, 0, 0))
+    ImageDraw.Draw(ring).ellipse((0, 0, av_size + 12, av_size + 12), fill=(88, 101, 242, 255))
+    card.paste(ring, (ax - 6, ay - 6), ring)
+    card.paste(avatar, (ax, ay), avatar)
+
+    tx = ax + av_size + 40
+    name_font = _load_font(40, bold=True)
+    info_font = _load_font(26, bold=True)
+    small_font = _load_font(22)
+
+    draw.text((tx, 45), _truncate(draw, username, name_font, 480), font=name_font, fill=(255, 255, 255))
+    draw.text((tx, 100), f"Niveau {level}", font=info_font, fill=(173, 216, 255))
+    rank_text = f"#{rank}"
+    rw = draw.textlength(rank_text, font=info_font)
+    draw.text((W - 45 - rw, 100), rank_text, font=info_font, fill=(255, 215, 0))
+
+    # Barre de progression
+    bar_x, bar_y, bar_w, bar_h = tx, 165, W - tx - 45, 32
+    radius = bar_h // 2
+    draw.rounded_rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), radius=radius, fill=(20, 21, 36))
+    ratio = 0 if xp_needed <= 0 else max(0.0, min(1.0, xp_into / xp_needed))
+    fill_w = int(bar_w * ratio)
+    if fill_w >= bar_h:
+        draw.rounded_rectangle(
+            (bar_x, bar_y, bar_x + fill_w, bar_y + bar_h), radius=radius, fill=(88, 101, 242)
+        )
+    draw.text(
+        (bar_x, bar_y + bar_h + 8),
+        f"{xp_into} / {xp_needed} XP",
+        font=small_font,
+        fill=(200, 200, 210),
+    )
+
+    buffer = io.BytesIO()
+    card.convert("RGB").save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
+
+async def generate_rank_card(
+    member: discord.Member, level: int, rank: int, xp_into: int, xp_needed: int
+) -> io.BytesIO:
+    """Genere la carte de niveau d'un membre."""
+    avatar_bytes = await member.display_avatar.replace(size=256, format="png").read()
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None, _render_rank_card, avatar_bytes, member.display_name, level, rank, xp_into, xp_needed
+    )
+
+
 def placeholder_avatar_bytes() -> bytes:
     """Avatar neutre (silhouette) pour l'apercu du dashboard."""
     img = Image.new("RGB", (256, 256), (88, 101, 242))

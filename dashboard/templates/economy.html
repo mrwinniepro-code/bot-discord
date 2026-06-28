@@ -1,0 +1,93 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+
+<!-- Réglages -->
+<form method="post" class="mb-4">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="action" value="save">
+  <div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-coin text-primary"></i> Économie</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="economy_enabled" id="economy_enabled"
+               {{ 'checked' if cfg.economy_enabled }}>
+        <label class="form-check-label" for="economy_enabled">Activé</label>
+      </div>
+    </div>
+    <div class="card-body row g-3">
+      <div class="col-sm-8">
+        <label class="form-label">Nom de la monnaie</label>
+        <input type="text" name="currency_name" class="form-control" value="{{ cfg.currency_name }}">
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label">Symbole / emoji</label>
+        <input type="text" name="currency_symbol" class="form-control" value="{{ cfg.currency_symbol }}">
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label">Récompense /daily</label>
+        <input type="number" name="daily_amount" class="form-control" min="0" value="{{ cfg.daily_amount }}">
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label">/travailler min</label>
+        <input type="number" name="work_min" class="form-control" min="0" value="{{ cfg.work_min }}">
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label">/travailler max</label>
+        <input type="number" name="work_max" class="form-control" min="0" value="{{ cfg.work_max }}">
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Boutique -->
+<div class="card">
+  <div class="card-header"><i class="bi bi-shop text-primary"></i> Boutique de rôles</div>
+  <div class="card-body">
+    <p class="text-secondary">Les membres achètent ces rôles avec <code>/acheter</code>.</p>
+    {% if items %}
+    <ul class="list-group mb-3">
+      {% for it in items %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span><strong>{{ it.name }}</strong> —
+          {% set role = (roles | selectattr('id', 'equalto', it.role_id|string) | first) %}
+          {{ role.name if role else 'rôle #' ~ it.role_id }} • {{ it.price }} {{ cfg.currency_symbol }}
+        </span>
+        <form method="post">
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="del_item">
+          <input type="hidden" name="item_id" value="{{ it.id }}">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-secondary">La boutique est vide.</p>
+    {% endif %}
+    <form method="post" class="row g-2 align-items-end">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="add_item">
+      <div class="col">
+        <label class="form-label">Nom de l'article</label>
+        <input type="text" name="name" class="form-control" placeholder="Rôle VIP" required>
+      </div>
+      <div class="col">
+        <label class="form-label">Rôle</label>
+        <select name="role_id" class="form-select">
+          {% for r in roles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label">Prix</label>
+        <input type="number" name="price" class="form-control" min="1" value="500" style="width:120px">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-success"><i class="bi bi-plus-lg"></i> Ajouter</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -23,7 +23,15 @@ from bot.config import (
     DASHBOARD_PORT,
     FLASK_SECRET_KEY,
 )
-from bot.database import AutoRole, Giveaway, ModCase, get_guild_config, session_scope
+from bot.database import (
+    AutoRole,
+    Giveaway,
+    LevelReward,
+    ModCase,
+    ShopItem,
+    get_guild_config,
+    session_scope,
+)
 from bot.utils.images import _render_card, placeholder_avatar_bytes
 from bot.utils.modlog import ACTION_LABELS
 
@@ -402,6 +410,116 @@ def create_app() -> Flask:
                 for g in rows
             ]
         return render_template("giveaways.html", guild=guild, active="giveaways", giveaways=items)
+
+    # ---- module Niveaux ---- #
+    @app.route("/g/<guild_id>/levels", methods=["GET", "POST"])
+    @login_required
+    def levels(guild_id):
+        guild = require_guild(guild_id)
+        try:
+            channels = discord_api.text_channels(guild_id)
+            roles = discord_api.assignable_roles(guild_id)
+        except requests.HTTPError:
+            channels, roles = [], []
+
+        if request.method == "POST":
+            check_csrf()
+            action = request.form.get("action")
+            with session_scope() as s:
+                if action == "add_reward":
+                    lvl = _int_or(request.form.get("level"), 1, 1, 1000)
+                    rid = _int_or_none(request.form.get("role_id"))
+                    if rid:
+                        s.add(LevelReward(guild_id=int(guild_id), level=lvl, role_id=rid))
+                    flash("Récompense ajoutée.", "success")
+                elif action == "del_reward":
+                    rw = s.get(LevelReward, _int_or_none(request.form.get("reward_id")))
+                    if rw and rw.guild_id == int(guild_id):
+                        s.delete(rw)
+                    flash("Récompense supprimée.", "success")
+                else:  # save
+                    cfg = get_guild_config(s, int(guild_id))
+                    cfg.levels_enabled = request.form.get("levels_enabled") == "on"
+                    cfg.levelup_announce = request.form.get("levelup_announce") == "on"
+                    cfg.levelup_channel_id = _int_or_none(request.form.get("levelup_channel_id"))
+                    cfg.levelup_message = (
+                        request.form.get("levelup_message", "").strip() or cfg.levelup_message
+                    )
+                    flash("Réglages des niveaux enregistrés.", "success")
+            return redirect(url_for("levels", guild_id=guild_id))
+
+        with session_scope() as s:
+            cfg = get_guild_config(s, int(guild_id))
+            data = {
+                "levels_enabled": cfg.levels_enabled,
+                "levelup_announce": cfg.levelup_announce,
+                "levelup_channel_id": cfg.levelup_channel_id,
+                "levelup_message": cfg.levelup_message,
+            }
+            rewards = (
+                s.query(LevelReward)
+                .filter_by(guild_id=int(guild_id))
+                .order_by(LevelReward.level)
+                .all()
+            )
+            reward_rows = [{"id": r.id, "level": r.level, "role_id": r.role_id} for r in rewards]
+        return render_template(
+            "levels.html", guild=guild, active="levels",
+            channels=channels, roles=roles, cfg=data, rewards=reward_rows,
+        )
+
+    # ---- module Economie ---- #
+    @app.route("/g/<guild_id>/economy", methods=["GET", "POST"])
+    @login_required
+    def economy(guild_id):
+        guild = require_guild(guild_id)
+        try:
+            roles = discord_api.assignable_roles(guild_id)
+        except requests.HTTPError:
+            roles = []
+
+        if request.method == "POST":
+            check_csrf()
+            action = request.form.get("action")
+            with session_scope() as s:
+                if action == "add_item":
+                    rid = _int_or_none(request.form.get("role_id"))
+                    price = _int_or(request.form.get("price"), 100, 1, 100000000)
+                    iname = request.form.get("name", "").strip()[:100]
+                    if rid and iname:
+                        s.add(ShopItem(guild_id=int(guild_id), role_id=rid, name=iname, price=price))
+                    flash("Article ajouté à la boutique.", "success")
+                elif action == "del_item":
+                    it = s.get(ShopItem, _int_or_none(request.form.get("item_id")))
+                    if it and it.guild_id == int(guild_id):
+                        s.delete(it)
+                    flash("Article supprimé.", "success")
+                else:  # save
+                    cfg = get_guild_config(s, int(guild_id))
+                    cfg.economy_enabled = request.form.get("economy_enabled") == "on"
+                    cfg.currency_name = (request.form.get("currency_name", "").strip() or "pièces")[:40]
+                    cfg.currency_symbol = (request.form.get("currency_symbol", "").strip() or "🪙")[:16]
+                    cfg.daily_amount = _int_or(request.form.get("daily_amount"), 100, 0, 100000000)
+                    cfg.work_min = _int_or(request.form.get("work_min"), 20, 0, 100000000)
+                    cfg.work_max = _int_or(request.form.get("work_max"), 80, 0, 100000000)
+                    flash("Réglages d'économie enregistrés.", "success")
+            return redirect(url_for("economy", guild_id=guild_id))
+
+        with session_scope() as s:
+            cfg = get_guild_config(s, int(guild_id))
+            data = {
+                "economy_enabled": cfg.economy_enabled,
+                "currency_name": cfg.currency_name,
+                "currency_symbol": cfg.currency_symbol,
+                "daily_amount": cfg.daily_amount,
+                "work_min": cfg.work_min,
+                "work_max": cfg.work_max,
+            }
+            items = s.query(ShopItem).filter_by(guild_id=int(guild_id)).order_by(ShopItem.price).all()
+            item_rows = [{"id": it.id, "name": it.name, "role_id": it.role_id, "price": it.price} for it in items]
+        return render_template(
+            "economy.html", guild=guild, active="economy", roles=roles, cfg=data, items=item_rows
+        )
 
     def _handle_background_upload(guild_id: str):
         """Sauvegarde un fond uploade. Renvoie le chemin, ou None si pas de fichier valide."""

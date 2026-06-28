@@ -27,6 +27,8 @@ INITIAL_COGS = [
     "bot.cogs.tickets",
     "bot.cogs.giveaways",
     "bot.cogs.polls",
+    "bot.cogs.levels",
+    "bot.cogs.economy",
 ]
 
 

@@ -55,11 +55,17 @@ class General(commands.Cog):
             inline=False,
         )
         embed.add_field(
+            name="🏆 Niveaux · 💰 Économie",
+            value="`/niveau` `/classement` — XP et carte de niveau.\n"
+            "`/solde` `/daily` `/travailler` `/donner` `/boutique` `/acheter` — monnaie & boutique.",
+            inline=False,
+        )
+        embed.add_field(
             name="🛠️ Divers",
             value="`/ping` — teste la reactivite du bot.",
             inline=False,
         )
-        embed.set_footer(text="D'autres modules arrivent : niveaux (XP), economie...")
+        embed.set_footer(text="Configurable sur le dashboard web.")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 

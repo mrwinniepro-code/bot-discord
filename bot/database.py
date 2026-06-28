@@ -92,6 +92,22 @@ class GuildConfig(Base):
     suggestions_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     suggestions_channel_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
+    # --- Niveaux (XP) ---
+    levels_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    levelup_announce: Mapped[bool] = mapped_column(Boolean, default=True)
+    levelup_channel_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    levelup_message: Mapped[str] = mapped_column(
+        Text, default="🎉 Bravo {user_mention}, tu passes niveau **{level}** !"
+    )
+
+    # --- Economie ---
+    economy_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    currency_name: Mapped[str] = mapped_column(String(40), default="pièces")
+    currency_symbol: Mapped[str] = mapped_column(String(16), default="🪙")
+    daily_amount: Mapped[int] = mapped_column(Integer, default=100)
+    work_min: Mapped[int] = mapped_column(Integer, default=20)
+    work_max: Mapped[int] = mapped_column(Integer, default=80)
+
 
 class AutoRole(Base):
     """Roles attribues automatiquement a chaque arrivee."""
@@ -201,6 +217,53 @@ class GiveawayEntry(Base):
     user_id: Mapped[int] = mapped_column(BigInteger)
 
     giveaway: Mapped["Giveaway"] = relationship(back_populates="entries")
+
+
+class UserLevel(Base):
+    """XP et niveau d'un membre sur un serveur."""
+
+    __tablename__ = "user_level"
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    xp: Mapped[int] = mapped_column(Integer, default=0)
+    level: Mapped[int] = mapped_column(Integer, default=0)
+    last_message_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class LevelReward(Base):
+    """Role attribue automatiquement a l'atteinte d'un niveau."""
+
+    __tablename__ = "level_reward"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    level: Mapped[int] = mapped_column(Integer)
+    role_id: Mapped[int] = mapped_column(BigInteger)
+
+
+class UserEconomy(Base):
+    """Porte-monnaie d'un membre sur un serveur."""
+
+    __tablename__ = "user_economy"
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    balance: Mapped[int] = mapped_column(Integer, default=0)
+    last_daily: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_work: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ShopItem(Base):
+    """Un article de la boutique (un role a acheter)."""
+
+    __tablename__ = "shop_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    guild_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    role_id: Mapped[int] = mapped_column(BigInteger)
+    name: Mapped[str] = mapped_column(String(100))
+    price: Mapped[int] = mapped_column(Integer)
 
 
 # --- Moteur & sessions ---

@@ -1,0 +1,86 @@
+{% extends "guild_base.html" %}
+{% block guild_content %}
+
+<!-- Réglages -->
+<form method="post" class="mb-4">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="action" value="save">
+  <div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-trophy text-primary"></i> Niveaux (XP)</span>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="levels_enabled" id="levels_enabled"
+               {{ 'checked' if cfg.levels_enabled }}>
+        <label class="form-check-label" for="levels_enabled">Activé</label>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" name="levelup_announce" id="levelup_announce"
+               {{ 'checked' if cfg.levelup_announce }}>
+        <label class="form-check-label" for="levelup_announce">Annoncer les montées de niveau</label>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Salon des annonces (vide = salon où le membre écrit)</label>
+        <select name="levelup_channel_id" class="form-select">
+          <option value="">— Salon courant —</option>
+          {% for c in channels %}
+            <option value="{{ c.id }}" {{ 'selected' if cfg.levelup_channel_id == c.id|int }}># {{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Message de montée de niveau</label>
+        <input type="text" name="levelup_message" class="form-control" value="{{ cfg.levelup_message }}">
+        <div class="form-text">Variables : <code>{user_mention}</code> <code>{user}</code> <code>{level}</code> <code>{server}</code></div>
+      </div>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+    </div>
+  </div>
+</form>
+
+<!-- Récompenses de rôle -->
+<div class="card">
+  <div class="card-header"><i class="bi bi-gift text-primary"></i> Rôles-récompenses</div>
+  <div class="card-body">
+    <p class="text-secondary">Donne automatiquement un rôle quand un membre atteint un niveau.</p>
+    {% if rewards %}
+    <ul class="list-group mb-3">
+      {% for r in rewards %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>Niveau <strong>{{ r.level }}</strong> →
+          {% set role = (roles | selectattr('id', 'equalto', r.role_id|string) | first) %}
+          {{ role.name if role else 'rôle #' ~ r.role_id }}
+        </span>
+        <form method="post">
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="del_reward">
+          <input type="hidden" name="reward_id" value="{{ r.id }}">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-secondary">Aucune récompense configurée.</p>
+    {% endif %}
+    <form method="post" class="row g-2 align-items-end">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="add_reward">
+      <div class="col-auto">
+        <label class="form-label">Niveau</label>
+        <input type="number" name="level" class="form-control" min="1" value="5" style="width:100px">
+      </div>
+      <div class="col">
+        <label class="form-label">Rôle</label>
+        <select name="role_id" class="form-select">
+          {% for r in roles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-success"><i class="bi bi-plus-lg"></i> Ajouter</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
