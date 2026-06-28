@@ -32,6 +32,15 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or (
     "sqlite:///" + (DATA_DIR / "config.db").as_posix()
 )
 
+# Normalisation des URL Postgres (Neon, Supabase...) vers le driver pg8000
+# (100% Python, fonctionne partout y compris sur le telephone via Termux).
+# On accepte donc une URL collee telle quelle depuis Neon (postgresql://...).
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = "postgresql+pg8000://" + DATABASE_URL[len("postgresql://"):]
+    DATABASE_URL = DATABASE_URL.split("?", 1)[0]  # retire ?sslmode=require etc.
+
 # --- Dashboard web (Phase 2) ---
 # Identifiants OAuth2 de l'application Discord (memes que le bot).
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "").strip()

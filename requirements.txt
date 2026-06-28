@@ -4,6 +4,10 @@ Pillow>=10.1.0
 SQLAlchemy>=2.0.0
 python-dotenv>=1.0.0
 
-# --- Dashboard web (Phase 2, pas encore utilise) ---
+# --- Dashboard web (Phase 2) ---
 Flask>=3.0.0
 requests>=2.31.0
+
+# --- Base de donnees en ligne optionnelle (Neon/Supabase) ---
+# Driver Postgres 100% Python : fonctionne partout, y compris sur Termux (telephone).
+pg8000>=1.30.0

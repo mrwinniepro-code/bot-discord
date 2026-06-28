@@ -269,8 +269,22 @@ class ShopItem(Base):
 # --- Moteur & sessions ---
 # check_same_thread=False : utile car le bot (asyncio) et le dashboard (Flask)
 # peuvent toucher la base depuis des threads differents.
-_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, echo=False, future=True, connect_args=_connect_args)
+if DATABASE_URL.startswith("sqlite"):
+    _connect_args = {"check_same_thread": False}
+elif "pg8000" in DATABASE_URL:
+    import ssl
+
+    _connect_args = {"ssl_context": ssl.create_default_context()}
+else:
+    _connect_args = {}
+
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    pool_pre_ping=True,  # evite les erreurs de connexion expiree (bases cloud)
+    connect_args=_connect_args,
+)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, future=True)
 
 
@@ -304,8 +318,11 @@ def _auto_migrate() -> None:
             default = getattr(col.default, "arg", None)
             if default is not None and not callable(default):
                 if isinstance(default, bool):
-                    default = 1 if default else 0
-                if isinstance(default, str):
+                    if DATABASE_URL.startswith("sqlite"):
+                        default = 1 if default else 0
+                    else:
+                        default = "TRUE" if default else "FALSE"
+                elif isinstance(default, str):
                     default = "'" + default.replace("'", "''") + "'"
                 ddl += f" DEFAULT {default}"
             with engine.begin() as conn:
