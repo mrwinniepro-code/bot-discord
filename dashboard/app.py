@@ -30,6 +30,7 @@ from bot.database import (
     ModCase,
     ShopItem,
     get_guild_config,
+    init_db,
     session_scope,
 )
 from bot.utils.images import _render_card, placeholder_avatar_bytes
@@ -46,6 +47,7 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = FLASK_SECRET_KEY
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD
+    init_db()  # cree/maj les tables (utile si le dashboard demarre avant le bot)
     app.register_blueprint(auth_bp)
 
     # ---- helpers ---- #
