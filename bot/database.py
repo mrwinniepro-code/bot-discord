@@ -15,6 +15,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     create_engine,
@@ -266,6 +267,19 @@ class ShopItem(Base):
     price: Mapped[int] = mapped_column(Integer)
 
 
+class WelcomeBackground(Base):
+    """Image de fond de la carte de bienvenue, stockee dans la base.
+
+    Stockee en base (et pas en fichier local) pour que le bot (telephone) ET
+    le dashboard (PC) y aient acces via la meme base en ligne.
+    """
+
+    __tablename__ = "welcome_background"
+
+    guild_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+
+
 # --- Moteur & sessions ---
 # check_same_thread=False : utile car le bot (asyncio) et le dashboard (Flask)
 # peuvent toucher la base depuis des threads differents.
@@ -357,3 +371,26 @@ def get_guild_config(session: Session, guild_id: int) -> GuildConfig:
         session.add(cfg)
         session.flush()
     return cfg
+
+
+# --- Fond de carte de bienvenue (stocke en base) --- #
+def set_welcome_background(guild_id: int, data: bytes) -> None:
+    with session_scope() as s:
+        row = s.get(WelcomeBackground, guild_id)
+        if row is None:
+            s.add(WelcomeBackground(guild_id=guild_id, data=data))
+        else:
+            row.data = data
+
+
+def get_welcome_background(guild_id: int) -> bytes | None:
+    with session_scope() as s:
+        row = s.get(WelcomeBackground, guild_id)
+        return bytes(row.data) if row and row.data else None
+
+
+def clear_welcome_background(guild_id: int) -> None:
+    with session_scope() as s:
+        row = s.get(WelcomeBackground, guild_id)
+        if row:
+            s.delete(row)

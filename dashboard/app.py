@@ -29,9 +29,12 @@ from bot.database import (
     LevelReward,
     ModCase,
     ShopItem,
+    clear_welcome_background,
     get_guild_config,
+    get_welcome_background,
     init_db,
     session_scope,
+    set_welcome_background,
 )
 from bot.utils.images import _render_card, placeholder_avatar_bytes
 from bot.utils.modlog import ACTION_LABELS
@@ -154,14 +157,16 @@ def create_app() -> Flask:
             # --- Fond de la carte ---
             if form.get("remove_background") == "on":
                 cfg.welcome_card_background = None
+                clear_welcome_background(int(guild_id))
             else:
                 saved = _handle_background_upload(guild_id)
                 if saved is not None:
-                    cfg.welcome_card_background = saved
+                    cfg.welcome_card_background = saved  # marqueur "db"
                 else:
                     url = form.get("background_url", "").strip()
                     if url.startswith(("http://", "https://")):
                         cfg.welcome_card_background = url
+                        clear_welcome_background(int(guild_id))
 
     @app.route("/g/<guild_id>/welcome/preview.png")
     @login_required
@@ -170,17 +175,17 @@ def create_app() -> Flask:
         with session_scope() as s:
             cfg = get_guild_config(s, int(guild_id))
             title, bg = cfg.welcome_card_title, cfg.welcome_card_background
-        # Fond : chemin local, ou on telecharge l'URL pour l'apercu
+        # Fond : image stockee en base (upload) ou URL telechargee pour l'apercu
         background = None
-        if bg and bg.startswith(("http://", "https://")):
+        if bg == "db":
+            background = get_welcome_background(int(guild_id))
+        elif bg and bg.startswith(("http://", "https://")):
             try:
                 resp = requests.get(bg, timeout=8)
                 if resp.status_code == 200:
                     background = resp.content
             except requests.RequestException:
                 background = None
-        elif bg:
-            background = bg
         buf = _render_card(placeholder_avatar_bytes(), title, "NouveauMembre", "Membre n°123", background)
         resp = send_file(buf, mimetype="image/png")
         resp.headers["Cache-Control"] = "no-store"
@@ -524,7 +529,10 @@ def create_app() -> Flask:
         )
 
     def _handle_background_upload(guild_id: str):
-        """Sauvegarde un fond uploade. Renvoie le chemin, ou None si pas de fichier valide."""
+        """Stocke un fond uploade DANS LA BASE (accessible par le bot du telephone).
+
+        Renvoie le marqueur "db", ou None si pas de fichier valide.
+        """
         file = request.files.get("background_file")
         if not file or not file.filename:
             return None
@@ -538,15 +546,8 @@ def create_app() -> Flask:
         except Exception:
             flash("Le fichier n'est pas une image valide.", "danger")
             return None
-        # Nettoie les anciens fonds de ce serveur
-        for old in BACKGROUNDS_DIR.glob(f"{guild_id}.*"):
-            try:
-                old.unlink()
-            except OSError:
-                pass
-        dest = BACKGROUNDS_DIR / f"{guild_id}{ext}"
-        dest.write_bytes(raw)
-        return str(dest)
+        set_welcome_background(int(guild_id), raw)
+        return "db"
 
     return app
 

@@ -160,34 +160,41 @@ def _render_card(
     return buffer
 
 
-async def _resolve_background(background_path: str | None):
-    """Transforme la valeur stockee (URL ou chemin) en source utilisable par Pillow."""
-    if not background_path:
+async def _resolve_background(background):
+    """Transforme la source de fond (octets ou URL) en octets utilisables par Pillow.
+
+    background : octets (image stockee en base) | URL http(s) | None.
+    """
+    if not background:
         return None
-    if background_path.startswith(("http://", "https://")):
+    if isinstance(background, (bytes, bytearray)):
+        return bytes(background)
+    if isinstance(background, str) and background.startswith(("http://", "https://")):
         try:
             import aiohttp
 
             timeout = aiohttp.ClientTimeout(total=10)
             async with aiohttp.ClientSession(timeout=timeout) as http:
-                async with http.get(background_path) as resp:
+                async with http.get(background) as resp:
                     if resp.status == 200:
                         return await resp.read()
         except Exception:
             return None
-        return None
-    return background_path  # chemin local
+    return None
 
 
 async def generate_welcome_card(
     member: discord.Member,
     title: str = "Bienvenue",
     subtitle: str | None = None,
-    background_path: str | None = None,
+    background=None,
 ) -> io.BytesIO:
-    """Genere la carte de bienvenue d'un membre et renvoie un buffer PNG."""
+    """Genere la carte de bienvenue d'un membre et renvoie un buffer PNG.
+
+    background : octets d'image (depuis la base) | URL http(s) | None.
+    """
     avatar_bytes = await member.display_avatar.replace(size=256, format="png").read()
-    background = await _resolve_background(background_path)
+    bg = await _resolve_background(background)
     if subtitle is None:
         count = member.guild.member_count or 0
         subtitle = f"Membre n°{count}" if count else member.guild.name
@@ -195,7 +202,7 @@ async def generate_welcome_card(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, _render_card, avatar_bytes, title, username, subtitle, background
+        None, _render_card, avatar_bytes, title, username, subtitle, bg
     )
 
 

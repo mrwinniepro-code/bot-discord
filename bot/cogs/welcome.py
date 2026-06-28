@@ -7,8 +7,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from ..database import get_guild_config, session_scope
+from ..database import get_guild_config, get_welcome_background, session_scope
 from ..utils.images import generate_welcome_card
+
+
+def _background_source(guild_id: int, card_bg: str | None):
+    """Renvoie la source de fond : octets (upload en base), URL, ou None."""
+    if card_bg == "db":
+        return get_welcome_background(guild_id)
+    if card_bg and card_bg.startswith(("http://", "https://")):
+        return card_bg
+    return None
 
 log = logging.getLogger("bot.welcome")
 
@@ -58,7 +67,8 @@ class Welcome(commands.Cog):
         kwargs: dict = {"content": format_message(message, member)}
         if card_enabled:
             try:
-                buf = await generate_welcome_card(member, title=card_title, background_path=card_bg)
+                background = _background_source(member.guild.id, card_bg)
+                buf = await generate_welcome_card(member, title=card_title, background=background)
                 kwargs["file"] = discord.File(buf, filename="bienvenue.png")
             except Exception:
                 log.exception("Echec de generation de la carte de bienvenue")
@@ -165,7 +175,8 @@ class Welcome(commands.Cog):
         kwargs: dict = {"content": format_message(message, member)}
         if card_enabled:
             try:
-                buf = await generate_welcome_card(member, title=card_title, background_path=card_bg)
+                background = _background_source(interaction.guild_id, card_bg)
+                buf = await generate_welcome_card(member, title=card_title, background=background)
                 kwargs["file"] = discord.File(buf, filename="bienvenue.png")
             except Exception:
                 log.exception("Echec apercu carte")
